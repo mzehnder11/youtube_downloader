@@ -15,7 +15,7 @@ class YouTubeDownloader:
         # Initialize variables
         self.url_var = tk.StringVar()
         self.format_var = tk.StringVar(value="video") # Default to video download
-        
+
         # --- ANPASSUNG HIER: Setze den Ausgabepfad auf den Downloads-Ordner ---
         # Dies funktioniert für macOS, Linux und die meisten Windows-Installationen
         self.output_path = os.path.join(os.path.expanduser("~"), "Downloads")
