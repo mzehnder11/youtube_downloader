@@ -2,37 +2,32 @@ import os
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
-import shutil # For checking if yt-dlp and ffmpeg are available
-import threading # For running download in a separate thread
+import shutil
+import threading
+
 
 class YouTubeDownloader:
     def __init__(self, root):
         self.root = root
         self.root.title("YouTube Downloader")
-        self.root.geometry("500x350") # Slightly increased height for better spacing
-        self.root.resizable(False, False) # Fixed window size
+        self.root.geometry("500x350")
+        self.root.resizable(False, False)
 
-        # Initialize variables
+        # --- Ästhetische Anpassungen: Sanftere Farbpalette und Stil ---
+        self.ACCENT_COLOR = "#00796B"
+        self.BACKGROUND_COLOR = "#F0F0F0"
+        self.WIDGET_BG = "#FFFFFF"
+        self.TEXT_COLOR = "#333333"
+
+        self._configure_style()
+        self.root.configure(bg=self.BACKGROUND_COLOR)
+
+        # Initialize variables (Funktionalität unverändert)
         self.url_var = tk.StringVar()
-        self.format_var = tk.StringVar(value="video") # Default to video download
-
-        # --- ANPASSUNG HIER: Setze den Ausgabepfad auf den Downloads-Ordner ---
-        # Dies funktioniert für macOS, Linux und die meisten Windows-Installationen
+        self.format_var = tk.StringVar(value="video")
         self.output_path = os.path.join(os.path.expanduser("~"), "Downloads")
-        # Optional: Für Windows könnte es manchmal "Download" statt "Downloads" sein,
-        # oder ein anderer Pfad, je nach Spracheinstellung.
-        # Eine robustere Lösung für Windows wäre:
-        # import winreg
-        # try:
-        #     sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders'
-        #     downloads_guid = '{374DE290-123F-4565-9164-39C4925E4640}'
-        #     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
-        #         self.output_path = winreg.QueryValueEx(key, downloads_guid)[0]
-        # except Exception:
-        #     self.output_path = os.path.join(os.path.expanduser("~"), "Downloads")
-        # --------------------------------------------------------------------
 
-        # Check for yt-dlp and ffmpeg availability
+        # Check for yt-dlp and ffmpeg availability (Funktionalität unverändert)
         self.yt_dlp_path = self._find_executable("yt-dlp")
         self.ffmpeg_path = self._find_executable("ffmpeg")
 
@@ -41,67 +36,111 @@ class YouTubeDownloader:
 
         self.create_widgets()
 
+        # Initial die Fortschrittsanzeige ausblenden
+        self._hide_progress_elements()
+
+    def _configure_style(self):
+        """Konfiguriert den ttk Style für ein natürlicheres Aussehen."""
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure('.', background=self.BACKGROUND_COLOR)
+        style.configure('TLabel', font=("Segoe UI", 10), foreground=self.TEXT_COLOR, background=self.BACKGROUND_COLOR)
+        style.configure('TEntry', fieldbackground=self.WIDGET_BG, foreground=self.TEXT_COLOR, bordercolor="#AAAAAA",
+                        borderwidth=1, relief='flat')
+        style.configure('TRadiobutton', background=self.BACKGROUND_COLOR, foreground=self.TEXT_COLOR,
+                        font=("Segoe UI", 10))
+        style.configure('Accent.TButton', background=self.ACCENT_COLOR, foreground=self.WIDGET_BG,
+                        font=("Segoe UI", 10, "bold"), borderwidth=1, relief='raised')
+        style.map('Accent.TButton', background=[('active', '#004D40'), ('disabled', '#B0B0B0')],
+                  foreground=[('disabled', '#E0E0E0')])
+        style.configure("TProgressbar", thickness=10, troughcolor="#E8E8E8", background=self.ACCENT_COLOR,
+                        relief='flat')
+        style.configure('Status.TLabel', font=("Segoe UI", 9, "italic"), foreground="#666666",
+                        background=self.BACKGROUND_COLOR)
+
     def _find_executable(self, name):
-        """
-        Checks if an executable is available in the system's PATH.
-        Returns the full path to the executable if found, otherwise None.
-        """
+        """Checks if an executable is available in the system's PATH."""
         return shutil.which(name)
+
+    def _show_progress_elements(self):
+        """Macht Progress Bar und Status Label sichtbar."""
+        # Wir verwenden pack() wieder, um sie ins Layout aufzunehmen
+        self.progress.pack(pady=5, padx=30)
+        self.status_label.pack(pady=(5, 5))
+
+    def _hide_progress_elements(self):
+        """Blendet Progress Bar und Status Label aus."""
+        # Wir verwenden pack_forget(), um sie aus dem Layout zu entfernen
+        self.progress.pack_forget()
+        self.status_label.pack_forget()
 
     def create_widgets(self):
         """Creates and arranges the GUI widgets."""
-        # URL Input Section
-        url_frame = ttk.Frame(self.root, padding="10")
-        url_frame.pack(pady=10, fill=tk.X)
-        ttk.Label(url_frame, text="YouTube URL:").pack(anchor=tk.W)
+
+        title_label = ttk.Label(self.root, text="YouTube Downloader",
+                                font=("Segoe UI", 18, "bold"),
+                                style='TLabel')
+        title_label.pack(pady=(25, 15))
+
+        # --- URL Input Section ---
+        url_frame = ttk.Frame(self.root, padding="15", style='TFrame')
+        url_frame.pack(pady=5, padx=30, fill=tk.X)
+
+        ttk.Label(url_frame, text="YouTube Video-Link:",
+                  font=("Segoe UI", 10, "bold"),
+                  style='TLabel').pack(anchor=tk.W, pady=(0, 5))
+
         ttk.Entry(url_frame, textvariable=self.url_var, width=60).pack(fill=tk.X, expand=True)
 
-        # Format Selection Section
-        format_frame = ttk.Frame(self.root, padding="10")
-        format_frame.pack(pady=10)
-        ttk.Radiobutton(format_frame, text="Video (MP4)", variable=self.format_var, value="video") \
-            .pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(format_frame, text="Audio (MP3)", variable=self.format_var, value="audio") \
-            .pack(side=tk.LEFT)
+        # --- Format Selection Section ---
+        format_frame = ttk.Frame(self.root, padding="0", style='TFrame')
+        format_frame.pack(pady=10, padx=30)
 
-        # Download Button
-        self.download_button = ttk.Button(self.root, text="Download", command=self.start_download_thread)
-        self.download_button.pack(pady=15)
+        ttk.Label(format_frame, text="Zielformat:", style='TLabel').pack(side=tk.LEFT, padx=(0, 15))
 
-        # Progress Bar
-        self.progress = ttk.Progressbar(self.root, length=400, mode="determinate")
-        self.progress.pack(pady=10)
+        ttk.Radiobutton(format_frame, text="Video (MP4)", variable=self.format_var, value="video",
+                        style='TRadiobutton').pack(side=tk.LEFT, padx=15)
 
-        # Status Label
-        self.status_label = ttk.Label(self.root, text="", font=("Arial", 10))
-        self.status_label.pack()
+        ttk.Radiobutton(format_frame, text="Audio (MP3)", variable=self.format_var, value="audio",
+                        style='TRadiobutton').pack(side=tk.LEFT)
 
-        # Warnings for missing tools
+        # --- Download Button ---
+        self.download_button = ttk.Button(self.root, text="Download starten",
+                                          command=self.start_download_thread,
+                                          style='Accent.TButton')
+        self.download_button.pack(pady=20, ipadx=15, ipady=6)
+
+        # --- Progress Bar und Status Label (Zuerst initialisieren, dann verstecken) ---
+        self.progress = ttk.Progressbar(self.root, length=400, mode="determinate", style="TProgressbar")
+        self.status_label = ttk.Label(self.root, text="", style="Status.TLabel")
+
+        # Warnings for missing tools (Funktionalität unverändert)
         if not self.yt_dlp_available:
-            ttk.Label(self.root, text="Warnung: yt-dlp wurde nicht gefunden. Download ist nicht möglich.",
-                      foreground="red", font=("Arial", 9, "bold")).pack(pady=5)
-            ttk.Label(self.root, text="Bitte installiere yt-dlp (z.B. 'pip install yt-dlp').",
-                      foreground="red", font=("Arial", 8)).pack()
-            self.download_button.config(state=tk.DISABLED) # Disable button if yt-dlp is missing
+            ttk.Label(self.root, text="Warnung: yt-dlp nicht gefunden. Download nicht möglich.",
+                      foreground="#CC0000", font=("Segoe UI", 9, "bold"), background=self.BACKGROUND_COLOR).pack(
+                pady=(5, 0))
+            self.download_button.config(state=tk.DISABLED)
 
         if not self.ffmpeg_available:
-            ttk.Label(self.root, text="Warnung: ffmpeg wurde nicht gefunden. MP3-Konvertierung funktioniert nicht.",
-                      foreground="orange", font=("Arial", 9, "bold")).pack(pady=5)
-            # Note: We don't disable the button for ffmpeg, as video download might still work
+            ttk.Label(self.root, text="Hinweis: ffmpeg fehlt. MP3-Konvertierung funktioniert nicht.",
+                      foreground="#B8860B", font=("Segoe UI", 9, "bold"), background=self.BACKGROUND_COLOR).pack(
+                pady=(5, 0))
 
+    # --- Die folgenden Methoden sind funktional unverändert ---
     def start_download_thread(self):
         """Starts the download process in a separate thread to keep GUI responsive."""
         url = self.url_var.get().strip()
         if not url:
-            messagebox.showwarning("Eingabefehler", "Bitte gib eine gültige YouTube-URL ein.")
+            messagebox.showwarning("Eingabefehler", "Bitte geben Sie eine gültige YouTube-URL ein.")
             return
 
-        # Disable button during download
+        # Fortschrittsanzeige einblenden, bevor der Thread startet
+        self._show_progress_elements()
+
         self.download_button.config(state=tk.DISABLED)
         self.progress['value'] = 0
-        self.status_label.config(text="Starte Download...")
+        self.status_label.config(text="Vorbereitung...")
 
-        # Run download in a new thread
         download_thread = threading.Thread(target=self._perform_download)
         download_thread.start()
 
@@ -111,74 +150,73 @@ class YouTubeDownloader:
         selected_format = self.format_var.get()
 
         try:
-            # Ensure the output directory exists
             os.makedirs(self.output_path, exist_ok=True)
-
-            # Base command for yt-dlp
-            # Added --no-playlist to ensure only single video is downloaded even if URL is part of a mix/playlist
-            command = [self.yt_dlp_path, url, "--no-playlist", "-o", os.path.join(self.output_path, "%(title)s.%(ext)s")]
+            command = [self.yt_dlp_path, url, "--no-playlist", "-o",
+                       os.path.join(self.output_path, "%(title)s.%(ext)s")]
 
             if selected_format == "audio":
                 if not self.ffmpeg_available:
-                    self.root.after(0, lambda: messagebox.showerror("Fehler", "ffmpeg wird für die MP3-Konvertierung benötigt, wurde aber nicht gefunden."))
-                    self.root.after(0, lambda: self.status_label.config(text="Download fehlgeschlagen: ffmpeg nicht gefunden."))
+                    self.root.after(0, lambda: messagebox.showerror("Fehler",
+                                                                    "ffmpeg wird für die MP3-Konvertierung benötigt, wurde aber nicht gefunden."))
+                    self.root.after(0, lambda: self.status_label.config(
+                        text="Download fehlgeschlagen: ffmpeg nicht gefunden."))
+                    self.root.after(0, lambda: self._cleanup_after_download())
                     return
 
-                # yt-dlp options for audio only and convert to mp3
-                command.extend(["-x", "--audio-format", "mp3", "--audio-quality", "0"]) # 0 is best quality
-            else: # video
-                # yt-dlp will download best available video by default
+                command.extend(["-x", "--audio-format", "mp3", "--audio-quality", "0"])
+            else:
                 pass
 
-            # Add progress reporting options for yt-dlp
             command.extend(["--no-warnings", "--progress", "--newline"])
 
-            # Execute yt-dlp command
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1,
+                                       universal_newlines=True)
 
-            # Read stdout line by line to update progress
             for line in process.stdout:
                 if "%" in line and "ETA" in line:
                     try:
-                        # Example line: "[download]   0.1% of 10.00MiB at 1.23MiB/s ETA 00:08"
                         percentage_str = line.split('%')[0].split()[-1]
                         percentage = float(percentage_str)
                         self.root.after(0, lambda p=percentage: self.progress.config(value=p))
                         self.root.after(0, lambda s=line.strip(): self.status_label.config(text=s))
                     except (ValueError, IndexError):
-                        pass # Ignore lines that don't match expected progress format
+                        pass
 
-            # Wait for the process to finish and get return code
             process.stdout.close()
             stderr_output = process.stderr.read()
             return_code = process.wait()
 
             if return_code == 0:
                 self.root.after(0, lambda: self.progress.config(value=100))
-                self.root.after(0, lambda: self.status_label.config(text="Download abgeschlossen!"))
-                self.root.after(0, lambda: messagebox.showinfo("Fertig", f"Download abgeschlossen!\nGespeichert unter: {self.output_path}"))
+                self.root.after(0, lambda: self.status_label.config(text="Download erfolgreich abgeschlossen!"))
+                self.root.after(0, lambda: messagebox.showinfo("Fertig",
+                                                               f"Download abgeschlossen!\nGespeichert unter: {self.output_path}"))
             else:
                 error_message = f"yt-dlp Fehler (Code {return_code}):\n{stderr_output}"
                 self.root.after(0, lambda: self.status_label.config(text="Download fehlgeschlagen."))
                 self.root.after(0, lambda: messagebox.showerror("Download-Fehler", error_message))
 
         except FileNotFoundError:
-            self.root.after(0, lambda: messagebox.showerror("Fehler", "yt-dlp wurde nicht gefunden. Bitte installiere es."))
+            self.root.after(0, lambda: messagebox.showerror("Fehler",
+                                                            "yt-dlp wurde nicht gefunden. Bitte installieren Sie es."))
             self.root.after(0, lambda: self.status_label.config(text="Download fehlgeschlagen: yt-dlp nicht gefunden."))
         except Exception as e:
             self.root.after(0, lambda: self.status_label.config(text="Ein unerwarteter Fehler ist aufgetreten."))
-            self.root.after(0, lambda: messagebox.showerror("Fehler", f"Ein unerwarteter Fehler ist aufgetreten: {str(e)}"))
+            self.root.after(0, lambda: messagebox.showerror("Fehler",
+                                                            f"Ein unerwarteter Fehler ist aufgetreten: {str(e)}"))
         finally:
-            # Re-enable button after download (success or failure)
-            self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
-            self.root.after(0, lambda: self.progress.config(value=0)) # Reset progress bar
+            self.root.after(0, lambda: self._cleanup_after_download())
+
+    def _cleanup_after_download(self):
+        """Helper to reset GUI elements on the main thread and hide them."""
+        self.download_button.config(state=tk.NORMAL)
+        self.progress.config(value=0)
+        # Fortschrittsanzeige wieder ausblenden
+        self._hide_progress_elements()
 
 
-# Main application entry point
+# Main application entry point (Funktionalität unverändert)
 if __name__ == "__main__":
     app = tk.Tk()
-    # Apply a modern theme for ttk widgets
-    style = ttk.Style()
-    style.theme_use("clam") # Or "alt", "default", "vista", "xpnative" on Windows, "aqua" on macOS
     YouTubeDownloader(app)
     app.mainloop()
