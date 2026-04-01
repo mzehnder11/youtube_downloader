@@ -1,4 +1,4 @@
-# 📺 YouTube Downloader (yt-dlp GUI)
+# YouTube Downloader (yt-dlp GUI)
 
 Ein schlanker, benutzerfreundlicher YouTube Downloader mit grafischer Oberfläche (Tkinter). Das Tool nutzt das leistungsstarke `yt-dlp` Backend, um Videos herunterzuladen oder direkt in hochwertige MP3-Dateien zu konvertieren.
 
