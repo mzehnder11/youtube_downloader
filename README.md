@@ -7,7 +7,7 @@ Ein schlanker, benutzerfreundlicher YouTube Downloader mit grafischer Oberfläch
 ## Features
 
 * **Einfache GUI:** Intuitive Oberfläche für die Eingabe von URLs.
-* **Formatwahl:** Download als **Video (MP4)** oder reine **Audiodatei (MP3)**.
+* **Formatwahl:** Download als **Video (MP4)** oder reine **Audiodatei (MP3)** (Formate werden strikt erzwungen).
 * **Live-Fortschritt:** Anzeige des aktuellen Fortschritts und der Download-Geschwindigkeit direkt im Fenster.
 * **Vollautomatisches Setup & Updates:** Die App prüft beim Start selbstständig alle Abhängigkeiten und hält `yt-dlp` automatisch auf dem neuesten Stand, um Kompatibilität mit neuen YouTube-Änderungen zu garantieren.
 * **Intelligente Fehlerprüfung:** Überprüft automatisch, ob notwendige Tools vorhanden sind und gibt hilfreiche Hinweise.

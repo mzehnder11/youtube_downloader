@@ -227,7 +227,8 @@ class YouTubeDownloader:
 
                 command.extend(["-x", "--audio-format", "mp3", "--audio-quality", "0"])
             else:
-                pass
+                # Erzwinge MP4 Format für Video-Downloads
+                command.extend(["--merge-output-format", "mp4", "--recode-video", "mp4"])
 
             command.extend(["--no-warnings", "--progress", "--newline"])
 
