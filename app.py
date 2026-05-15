@@ -1,9 +1,62 @@
 import os
+import sys
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
 import shutil
 import threading
+
+
+def is_yt_dlp_installed():
+    """Checks if yt-dlp is available either as an executable or a python module."""
+    if shutil.which("yt-dlp"):
+        return True
+    try:
+        subprocess.check_call([sys.executable, "-m", "yt_dlp", "--version"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except:
+        return False
+
+
+def ensure_dependencies():
+    """Checks and installs missing dependencies."""
+    print("Checking dependencies...")
+
+    # 1. Upgrade pip
+    print("Upgrading pip...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"Note: Could not upgrade pip: {e}")
+
+    # 2. Check/Update yt-dlp
+    print("Checking for yt-dlp updates...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("yt-dlp is up to date.")
+    except subprocess.CalledProcessError as e:
+        print(f"Note: Could not update yt-dlp: {e}")
+
+    # 3. Check/Install ffmpeg (Windows specific)
+    if shutil.which("ffmpeg") is None:
+        if os.name == 'nt':  # Windows
+            print("ffmpeg not found. Attempting to install via winget...")
+            try:
+                subprocess.check_call([
+                    "winget", "install", "--id=Gyan.FFmpeg", "--source=winget",
+                    "--accept-source-agreements", "--accept-package-agreements"
+                ])
+                print("ffmpeg installation initiated via winget.")
+            except Exception as e:
+                print(f"Failed to install ffmpeg via winget: {e}")
+                print("Please install ffmpeg manually: https://ffmpeg.org/download.html")
+        else:
+            print("ffmpeg not found. Please install it manually for your system.")
+    else:
+        print("ffmpeg is already installed.")
 
 
 class YouTubeDownloader:
@@ -27,11 +80,11 @@ class YouTubeDownloader:
         self.format_var = tk.StringVar(value="video")
         self.output_path = os.path.join(os.path.expanduser("~"), "Downloads")
 
-        # Check for yt-dlp and ffmpeg availability (Funktionalität unverändert)
-        self.yt_dlp_path = self._find_executable("yt-dlp")
-        self.ffmpeg_path = self._find_executable("ffmpeg")
+        # Check for yt-dlp and ffmpeg availability
+        self.yt_dlp_cmd = self._get_yt_dlp_command()
+        self.ffmpeg_path = shutil.which("ffmpeg")
 
-        self.yt_dlp_available = self.yt_dlp_path is not None
+        self.yt_dlp_available = self.yt_dlp_cmd is not None
         self.ffmpeg_available = self.ffmpeg_path is not None
 
         self.create_widgets()
@@ -58,9 +111,18 @@ class YouTubeDownloader:
         style.configure('Status.TLabel', font=("Segoe UI", 9, "italic"), foreground="#666666",
                         background=self.BACKGROUND_COLOR)
 
-    def _find_executable(self, name):
-        """Checks if an executable is available in the system's PATH."""
-        return shutil.which(name)
+    def _get_yt_dlp_command(self):
+        """Returns the command list to run yt-dlp."""
+        path = shutil.which("yt-dlp")
+        if path:
+            return [path]
+        # Fallback to python module
+        try:
+            subprocess.check_call([sys.executable, "-m", "yt_dlp", "--version"],
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return [sys.executable, "-m", "yt_dlp"]
+        except:
+            return None
 
     def _show_progress_elements(self):
         """Macht Progress Bar und Status Label sichtbar."""
@@ -151,7 +213,7 @@ class YouTubeDownloader:
 
         try:
             os.makedirs(self.output_path, exist_ok=True)
-            command = [self.yt_dlp_path, url, "--no-playlist", "-o",
+            command = self.yt_dlp_cmd + [url, "--no-playlist", "-o",
                        os.path.join(self.output_path, "%(title)s.%(ext)s")]
 
             if selected_format == "audio":
@@ -215,8 +277,9 @@ class YouTubeDownloader:
         self._hide_progress_elements()
 
 
-# Main application entry point (Funktionalität unverändert)
+# Main application entry point
 if __name__ == "__main__":
+    ensure_dependencies()
     app = tk.Tk()
     YouTubeDownloader(app)
-    app.mainloop()
+    app.mainloop()

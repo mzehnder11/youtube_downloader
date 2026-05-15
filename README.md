@@ -9,40 +9,39 @@ Ein schlanker, benutzerfreundlicher YouTube Downloader mit grafischer Oberfläch
 * **Einfache GUI:** Intuitive Oberfläche für die Eingabe von URLs.
 * **Formatwahl:** Download als **Video (MP4)** oder reine **Audiodatei (MP3)**.
 * **Live-Fortschritt:** Anzeige des aktuellen Fortschritts und der Download-Geschwindigkeit direkt im Fenster.
-* **Automatisches Setup:** Inklusive Skripte zur automatischen Installation der Abhängigkeiten für Windows und macOS/Linux.
-* **Intelligente Fehlerprüfung:** Überprüft automatisch, ob notwendige Tools wie `ffmpeg` vorhanden sind.
+* **Vollautomatisches Setup & Updates:** Die App prüft beim Start selbstständig alle Abhängigkeiten und hält `yt-dlp` automatisch auf dem neuesten Stand, um Kompatibilität mit neuen YouTube-Änderungen zu garantieren.
+* **Intelligente Fehlerprüfung:** Überprüft automatisch, ob notwendige Tools vorhanden sind und gibt hilfreiche Hinweise.
 
 ---
 
 ## Voraussetzungen
 
-Die App benötigt folgende Komponenten:
-1.  **Python 3.x**
-2.  **yt-dlp** (wird durch Setup-Skript installiert)
-3.  **FFmpeg** (erforderlich für die MP3-Konvertierung)
+Die App benötigt lediglich eine installierte Python-Version:
+* **Python 3.x**
+
+Alle weiteren Abhängigkeiten (`yt-dlp`, `ffmpeg`) werden beim ersten Start automatisch durch die `app.py` eingerichtet.
 
 ---
 
-## Installation & Start
+## Start der Anwendung
 
-Du musst die Abhängigkeiten nicht manuell installieren. Nutze einfach die mitgelieferten Setup-Skripte:
+Du musst keine manuellen Installationen vornehmen. Starte einfach die Hauptdatei:
 
-### Windows
-1.  Rechtsklick auf `setup.ps1`.
-2.  Wähle **"Mit PowerShell ausführen"**.
-    * Das Skript erstellt eine virtuelle Umgebung, installiert `yt-dlp` und versucht bei Bedarf, `ffmpeg` via winget nachzuinstallieren.
+### Windows / macOS / Linux
+1.  Öffne ein Terminal/PowerShell im Projektordner.
+2.  Führe folgenden Befehl aus:
+    ```bash
+    python app.py
+    ```
+    *(Hinweis: Je nach Installation kann der Befehl auch `python3 app.py` lauten.)*
 
-### macOS / Linux
-1.  Öffne das Terminal im Projektordner.
-2.  Mache das Skript ausführbar: `chmod +x setup.sh`
-3.  Starte das Skript: `./setup.sh`
-    * Das Skript nutzt Homebrew (falls vorhanden), um `ffmpeg` zu installieren und bereitet die Python-Umgebung vor.
+Das Skript prüft beim ersten Start alle Abhängigkeiten, aktualisiert `pip` und installiert `yt-dlp`. Auf Windows wird zudem versucht, `ffmpeg` via `winget` zu installieren, falls es fehlt.
 
 ---
 
 ## Benutzung
 
-1.  Starte die App (wird nach den Setup-Skripten automatisch ausgeführt oder via `python app.py`).
+1.  Starte die App via `python app.py`.
 2.  Kopiere einen **YouTube-Link** in das Eingabefeld.
 3.  Wähle das gewünschte **Zielformat** (Video oder Audio).
 4.  Klicke auf **"Download starten"**.
@@ -52,16 +51,14 @@ Du musst die Abhängigkeiten nicht manuell installieren. Nutze einfach die mitge
 
 ## Projektstruktur
 
-* `app.py`: Die Hauptanwendung (Python/Tkinter).
-* `setup.ps1`: Automatisierung für Windows-Nutzer.
-* `setup.sh`: Automatisierung für Unix-basierte Systeme.
-* `.venv/`: (Wird erstellt) Die isolierte Python-Umgebung für die Abhängigkeiten.
+* `app.py`: Die Hauptanwendung inklusive automatischer Dependency-Verwaltung.
+* `README.md`: Diese Dokumentation.
 
 ---
 
 ## Wichtige Hinweise
 
-* **FFmpeg:** Ohne FFmpeg ist der Download von MP3-Dateien nicht möglich. Die App wird dich darauf hinweisen, falls es fehlt.
+* **FFmpeg:** Ohne FFmpeg ist der Download von MP3-Dateien nicht möglich. Die App versucht dies unter Windows automatisch zu installieren. Auf anderen Systemen erhältst du einen Hinweis, falls es manuell installiert werden muss.
 * **Rechtliches:** Bitte beachte die Urheberrechtsbestimmungen und die Nutzungsbedingungen von YouTube. Dieses Tool ist nur für den privaten Gebrauch gedacht.
 
 ---
@@ -70,8 +67,8 @@ Du musst die Abhängigkeiten nicht manuell installieren. Nutze einfach die mitge
 
 | Problem | Lösung |
 | :--- | :--- |
-| **"yt-dlp nicht gefunden"** | Führe das `setup` Skript erneut aus. |
-| **MP3 Download schlägt fehl** | Stelle sicher, dass `ffmpeg` installiert ist. |
+| **"yt-dlp nicht gefunden"** | Das Programm sollte dies automatisch beheben. Falls nicht, prüfe deine Internetverbindung. |
+| **MP3 Download schlägt fehl** | Stelle sicher, dass `ffmpeg` installiert ist (wird unter Windows automatisch versucht). |
 | **URL wird nicht erkannt** | Prüfe, ob der Link korrekt kopiert wurde. |
 
 ---
